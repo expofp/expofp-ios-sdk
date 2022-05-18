@@ -29,18 +29,19 @@ struct Helper{
         }
     }
     
-    public static func createHtmlFile(filePath: URL, noOverlay: Bool, directory: URL, baseUrl: String, eventId: String, autoInit: Bool) throws {
-        let fileManager = FileManager.default
-        let html = Helper.getIndexHtml()
+    public static func createHtmlFile(filePath: URL, html: String, noOverlay: Bool, baseUrl: String, eventId: String, autoInit: Bool) throws {
+        let content = html
             .replacingOccurrences(of: "$url#", with: baseUrl)
             .replacingOccurrences(of: "$eventId#", with: eventId)
             .replacingOccurrences(of: "$noOverlay#", with: String(noOverlay))
             .replacingOccurrences(of: "$autoInit#", with: String(autoInit))
         
-        if !fileManager.fileExists(atPath: filePath.path){
-            try! fileManager.createDirectory(atPath: directory.path, withIntermediateDirectories: true, attributes: nil)
+        let fileDirectory = filePath.deletingLastPathComponent()
+        if !FileManager.default.fileExists(atPath: fileDirectory.path){
+            try! FileManager.default.createDirectory(atPath: fileDirectory.path, withIntermediateDirectories: true, attributes: nil)
         }
-        try html.write(to: filePath, atomically: true, encoding: String.Encoding.utf8)
+        
+        try content.write(to: filePath, atomically: true, encoding: String.Encoding.utf8)
     }
     
     public static func getCacheDirectory() -> URL {
@@ -48,80 +49,80 @@ struct Helper{
         return paths[0]
     }
     
-    public static func updateAllFiles(baseUrl: URL!, directory: URL!, callback: @escaping (() -> Void)) throws {
-        let dirs:[String] = [
-            directory.appendingPathComponent("fonts/").path,
-            directory.appendingPathComponent("vendor/fa/css/").path,
-            directory.appendingPathComponent("vendor/fa/webfonts/").path,
-            directory.appendingPathComponent("vendor/perfect-scrollbar/css/").path,
-            directory.appendingPathComponent("vendor/sanitize-css/").path,
-            directory.appendingPathComponent("locales/").path,
-            directory.appendingPathComponent("data/").path
+    public static func getDefaultConfiguration(baseUrl: String) -> Configuration {
+        let files = [
+            FileInfo(name: "fp.svg.js", serverUrl: "\(baseUrl)/data/fp.svg.js", cachePath: "data/fp.svg.js", version: "1"),
+            FileInfo(name: "data.js", serverUrl: "\(baseUrl)/data/data.js", cachePath: "data/data.js", version: "1"),
+            FileInfo(name: "wf.data.js", serverUrl: "\(baseUrl)/data/wf.data.js", cachePath: "data/wf.data.js", version: "1"),
+            FileInfo(name: "demo.png", serverUrl: "\(baseUrl)/data/demo.png", cachePath: "data/demo.png", version: "1"),
+            
+            FileInfo(name: "expofp.js", serverUrl: "\(baseUrl)/packages/master/expofp.js", cachePath: "expofp.js", version: "1"),
+            FileInfo(name: "floorplan.js", serverUrl: "\(baseUrl)/packages/master/floorplan.js", cachePath: "floorplan.js", version: "1"),
+            FileInfo(name: "vendors~floorplan.js", serverUrl: "\(baseUrl)/packages/master/vendors~floorplan.js", cachePath: "vendors~floorplan.js", version: "1"),
+            FileInfo(name: "expofp-overlay.png", serverUrl: "\(baseUrl)/packages/master/expofp-overlay.png", cachePath: "expofp-overlay.png", version: "1"),
+            FileInfo(name: "free.js", serverUrl: "\(baseUrl)/packages/master/free.js", cachePath: "free.js", version: "1"),
+            FileInfo(name: "slider.js", serverUrl: "\(baseUrl)/packages/master/slider.js", cachePath: "slider.js", version: "1"),
+            
+            FileInfo(name: "oswald-v17-cyrillic_latin-300.woff2", serverUrl: "\(baseUrl)/packages/master/fonts/oswald-v17-cyrillic_latin-300.woff2", cachePath: "fonts/oswald-v17-cyrillic_latin-300.woff2", version: "1"),
+            FileInfo(name: "oswald-v17-cyrillic_latin-500.woff2", serverUrl: "\(baseUrl)/packages/master/fonts/oswald-v17-cyrillic_latin-500.woff2", cachePath: "fonts/oswald-v17-cyrillic_latin-500.woff2", version: "1"),
+            
+            FileInfo(name: "fontawesome-all.min.css", serverUrl: "\(baseUrl)/packages/master/vendor/fa/css/fontawesome-all.min.css", cachePath: "vendor/fa/css/fontawesome-all.min.css", version: "1"),
+            
+            FileInfo(name: "fa-brands-400.woff2", serverUrl: "\(baseUrl)/packages/master/vendor/fa/webfonts/fa-brands-400.woff2", cachePath: "vendor/fa/webfonts/fa-brands-400.woff2", version: "1"),
+            FileInfo(name: "fa-light-300.woff2", serverUrl: "\(baseUrl)/packages/master/vendor/fa/webfonts/fa-light-300.woff2", cachePath: "vendor/fa/webfonts/fa-light-300.woff2", version: "1"),
+            FileInfo(name: "fa-regular-400.woff2", serverUrl: "\(baseUrl)/packages/master/vendor/fa/webfonts/fa-regular-400.woff2", cachePath: "vendor/fa/webfonts/fa-regular-400.woff2", version: "1"),
+            FileInfo(name: "fa-solid-900.woff2", serverUrl: "\(baseUrl)/packages/master/vendor/fa/webfonts/fa-solid-900.woff2", cachePath: "vendor/fa/webfonts/fa-solid-900.woff2", version: "1"),
+            
+            FileInfo(name: "perfect-scrollbar.css", serverUrl: "\(baseUrl)/packages/master/vendor/perfect-scrollbar/css/perfect-scrollbar.css", cachePath: "vendor/perfect-scrollbar/css/perfect-scrollbar.css", version: "1"),
+            FileInfo(name: "sanitize.css", serverUrl: "\(baseUrl)/packages/master/vendor/sanitize-css/sanitize.css", cachePath: "vendor/sanitize-css/sanitize.css", version: "1"),
+            
+            FileInfo(name: "ar.json", serverUrl: "\(baseUrl)/packages/master/locales/ar.json", cachePath: "locales/ar.json", version: "1"),
+            FileInfo(name: "de.json", serverUrl: "\(baseUrl)/packages/master/locales/de.json", cachePath: "locales/de.json", version: "1"),
+            FileInfo(name: "es.json", serverUrl: "\(baseUrl)/packages/master/locales/es.json", cachePath: "locales/es.json", version: "1"),
+            FileInfo(name: "fr.json", serverUrl: "\(baseUrl)/packages/master/locales/fr.json", cachePath: "locales/fr.json", version: "1"),
+            FileInfo(name: "it.json", serverUrl: "\(baseUrl)/packages/master/locales/it.json", cachePath: "locales/it.json", version: "1"),
+            FileInfo(name: "ko.json", serverUrl: "\(baseUrl)/packages/master/locales/ko.json", cachePath: "locales/ko.json", version: "1"),
+            FileInfo(name: "nl.json", serverUrl: "\(baseUrl)/packages/master/locales/nl.json", cachePath: "locales/nl.json", version: "1"),
+            FileInfo(name: "pt.json", serverUrl: "\(baseUrl)/packages/master/locales/pt.json", cachePath: "locales/pt.json", version: "1"),
+            FileInfo(name: "ru.json", serverUrl: "\(baseUrl)/packages/master/locales/ru.json", cachePath: "locales/ru.json", version: "1"),
+            FileInfo(name: "sv.json", serverUrl: "\(baseUrl)/packages/master/locales/sv.json", cachePath: "locales/sv.json", version: "1"),
+            FileInfo(name: "th.json", serverUrl: "\(baseUrl)/packages/master/locales/th.json", cachePath: "locales/th.json", version: "1"),
+            FileInfo(name: "tr.json", serverUrl: "\(baseUrl)/packages/master/locales/tr.json", cachePath: "locales/tr.json", version: "1"),
+            FileInfo(name: "vi.json", serverUrl: "\(baseUrl)/packages/master/locales/vi.json", cachePath: "locales/vi.json", version: "1"),
+            FileInfo(name: "zh.json", serverUrl: "\(baseUrl)/packages/master/locales/zh.json", cachePath: "locales/zh.json", version: "1"),
         ]
         
-        for(_, dirPath) in dirs.enumerated(){
-            try createDirectory(dirPath: dirPath)
+        return Configuration(noOverlay: true, androidHtmlUrl: nil, iosHtmlUrl: nil, files: files)
+    }
+    
+    public static func downloadFile(_ url: URL, _ filePath: URL, callback: @escaping (()->Void)){
+        let fileDirectory = filePath.deletingLastPathComponent()
+        if !FileManager.default.fileExists(atPath: fileDirectory.path){
+            try! FileManager.default.createDirectory(atPath: fileDirectory.path, withIntermediateDirectories: true, attributes: nil)
         }
-
-        let paths: [String: String] = [
-            "data/fp.svg.js": "data/fp.svg.js",
-            "data/data.js": "data/data.js",
-            "data/wf.data.js": "data/wf.data.js",
-            "data/demo.png": "data/demo.png",
-            
-            "packages/master/expofp.js": "expofp.js",
-            "packages/master/floorplan.js": "floorplan.js",
-            "packages/master/vendors~floorplan.js": "vendors~floorplan.js",
-            "packages/master/expofp-overlay.png": "expofp-overlay.png",
-            "packages/master/free.js": "free.js",
-            "packages/master/slider.js": "slider.js",
-            
-            "packages/master/fonts/oswald-v17-cyrillic_latin-300.woff2": "fonts/oswald-v17-cyrillic_latin-300.woff2",
-            "packages/master/fonts/oswald-v17-cyrillic_latin-500.woff2": "fonts/oswald-v17-cyrillic_latin-500.woff2",
-            
-            "packages/master/vendor/fa/css/fontawesome-all.min.css": "vendor/fa/css/fontawesome-all.min.css",
-            
-            "packages/master/vendor/fa/webfonts/fa-brands-400.woff2": "vendor/fa/webfonts/fa-brands-400.woff2",
-            "packages/master/vendor/fa/webfonts/fa-light-300.woff2": "vendor/fa/webfonts/fa-light-300.woff2",
-            "packages/master/vendor/fa/webfonts/fa-regular-400.woff2": "vendor/fa/webfonts/fa-regular-400.woff2",
-            "packages/master/vendor/fa/webfonts/fa-solid-900.woff2": "vendor/fa/webfonts/fa-solid-900.woff2",
-            
-            "packages/master/vendor/perfect-scrollbar/css/perfect-scrollbar.css": "vendor/perfect-scrollbar/css/perfect-scrollbar.css",
-            
-            "packages/master/vendor/sanitize-css/sanitize.css": "vendor/sanitize-css/sanitize.css",
-            
-            "packages/master/locales/ar.json": "locales/ar.json",
-            "packages/master/locales/de.json": "locales/de.json",
-            "packages/master/locales/es.json": "locales/es.json",
-            "packages/master/locales/fr.json": "locales/fr.json",
-            "packages/master/locales/it.json": "locales/it.json",
-            "packages/master/locales/ko.json": "locales/ko.json",
-            "packages/master/locales/nl.json": "locales/nl.json",
-            "packages/master/locales/pt.json": "locales/pt.json",
-            "packages/master/locales/ru.json": "locales/ru.json",
-            "packages/master/locales/sv.json": "locales/sv.json",
-            "packages/master/locales/th.json": "locales/th.json",
-            "packages/master/locales/tr.json": "locales/tr.json",
-            "packages/master/locales/vi.json": "locales/vi.json",
-            "packages/master/locales/zh.json": "locales/zh.json",
-        ]
         
+        let session = URLSession.shared
+        let task = session.dataTask(with: url, completionHandler: { data, response, error in
+            let fileManager = FileManager.default
+            fileManager.createFile(atPath: filePath.path, contents: data)
+            callback()
+        })
+        task.resume()
+    }
+    
+    public static func downloadFiles(_ files: [FileInfo], _ directory: URL!, _ callback: @escaping (() -> Void)){
         var count = 0
-        
-        for(_, path) in paths.enumerated(){
-            let url = baseUrl.appendingPathComponent("/" + path.key)
-            let filePath = directory.appendingPathComponent(path.value)
-            updateFile(url, filePath){
+        for(_, file) in files.enumerated(){
+            downloadFile(URL(string: file.serverUrl)!, directory.appendingPathComponent(file.cachePath)){
                 count += 1
-                if(count == paths.count){
+                if(count == files.count){
                     callback()
                 }
             }
         }
     }
     
-    
-    public static func getIndexHtml() -> String {
+    public static func getDefaultHtmlFile() -> String {
         return
 """
 <!DOCTYPE html>
@@ -163,7 +164,6 @@ struct Helper{
         height: 13px;
         background: #aaa;
         border-radius: 50%;
-        /* border: solid 1px #fff; */
         animation: lds-grid 1.2s linear infinite;
       }
 
@@ -288,21 +288,6 @@ struct Helper{
 </body>
 </html>
 """;
-    }
-    
-    public static func updateFile(_ url: URL, _ filePath: URL, callback: @escaping (()->Void)){
-        let session = URLSession.shared
-        let task = session.dataTask(with: url, completionHandler: { data, response, error in
-            let fileManager = FileManager.default
-            fileManager.createFile(atPath: filePath.path, contents: data)
-            callback()
-        })
-        task.resume()
-    }
-    
-    private static func createDirectory(dirPath: String) throws {
-        let fileManager = FileManager.default
-        try fileManager.createDirectory(atPath: dirPath, withIntermediateDirectories: true, attributes: nil)
     }
 }
 

@@ -16,6 +16,8 @@ public struct FplanView: UIViewRepresentable {
     private let eventId: String
     private let noOverlay: Bool
     
+    private let configuration: Configuration?
+    
     @Binding private var selectedBooth: String?
     
     private let route: Route?
@@ -32,11 +34,12 @@ public struct FplanView: UIViewRepresentable {
     /**
      This function initializes the view.
      Recommended for use in UIKit.
-      
+     
      **Parameters:**
      - url: Floor plan URL address in the format https://[expo_name].expofp.com
      - eventId = [expo_name]: Id of the expo
      - noOverlay: True - Hides the panel with information about exhibitors
+     - configuration: Fplan configuration
      - selectBoothAction: Callback to be called after the booth has been select
      - fpReadyAction: Callback to be called after the floor plan has been ready
      - buildDirectionAction: Callback to be called after the route has been built
@@ -44,6 +47,7 @@ public struct FplanView: UIViewRepresentable {
     public init(_ url: String,
                 eventId: String? = nil,
                 noOverlay: Bool = true,
+                configuration: Configuration? = nil,
                 selectBoothAction: ((_ boothName: String) -> Void)? = nil,
                 fpReadyAction:(() -> Void)? = nil,
                 buildDirectionAction: ((_ direction: Direction) -> Void)? = nil){
@@ -54,6 +58,7 @@ public struct FplanView: UIViewRepresentable {
         self.url = eventUrl
         self.eventId = eventId ?? Helper.getEventId(eventUrl)
         self.noOverlay = noOverlay
+        self.configuration = configuration
         
         self._selectedBooth = Binding.constant(nil)
         
@@ -76,6 +81,7 @@ public struct FplanView: UIViewRepresentable {
      - url: Floor plan URL address in the format https://[expo_name].expofp.com
      - eventId = [expo_name]: Id of the expo
      - noOverlay: True - Hides the panel with information about exhibitors
+     - configuration: Fplan configuration
      - selectedBooth: Booth selected on the floor plan
      - route: Information about the route to be built.
             After the route is built, the buildDirectionAction callback is called.
@@ -87,6 +93,7 @@ public struct FplanView: UIViewRepresentable {
     public init(_ url: String,
                 eventId: String? = nil,
                 noOverlay: Bool = true,
+                configuration: Configuration? = nil,
                 selectedBooth: Binding<String?>? = nil,
                 route: Route? = nil,
                 currentPosition: BlueDotPoint? = nil,
@@ -100,6 +107,7 @@ public struct FplanView: UIViewRepresentable {
         self.url = eventUrl
         self.eventId = eventId ?? Helper.getEventId(eventUrl)
         self.noOverlay = noOverlay
+        self.configuration = configuration
         
         self._selectedBooth = selectedBooth ?? Binding.constant(nil)
         
@@ -129,6 +137,8 @@ public struct FplanView: UIViewRepresentable {
         webView.navigationDelegate = webViewController
         webViewController.wkWebView = webView
         
+        webView.addObserver(webViewController, forKeyPath: #keyPath(WKWebView.estimatedProgress), options: .new, context: nil)
+        
         webView.configuration.userContentController.add(FpHandler(webView, fpReady), name: "onFpConfiguredHandler")
         webView.configuration.userContentController.add(BoothHandler(webView, selectBooth), name: "onBoothClickHandler")
         webView.configuration.userContentController.add(DirectionHandler(webView, buildDirection), name: "onDirectionHandler")
@@ -137,10 +147,10 @@ public struct FplanView: UIViewRepresentable {
     }
     
     public func updateUIView(_ webView: FSWebView, context: Context) {
-        
-        let newEventAddress = Helper.getEventAddress(self.url).lowercased()
-        
-        if(!(webView.url?.absoluteString.lowercased().contains(newEventAddress) ?? false)){
+        let eventAddress = Helper.getEventAddress(self.url)
+        let eventUrl = "https://\(eventAddress)"
+
+        if(webViewController.expoUrl != eventUrl){
             initWebView(webView)
         }
         else{
@@ -246,46 +256,64 @@ public struct FplanView: UIViewRepresentable {
     private func initWebView(_ webView: FSWebView) {
         let fileManager = FileManager.default
         let netReachability = NetworkReachability()
+        let online = netReachability.checkConnection()
         
         let eventAddress = Helper.getEventAddress(self.url)
         let eventUrl = "https://\(eventAddress)"
         
         let fplanDirectory = Helper.getCacheDirectory().appendingPathComponent("fplan/")
-        let directory = fplanDirectory.appendingPathComponent("\(eventAddress)/")
-        webViewController.setExpo(eventUrl, directory.absoluteString)
-
-        let indexPath = directory.appendingPathComponent("index.html")
-        let baseUrl = "\(Constants.scheme)://\(directory.path)"
+        let eventDirectory = fplanDirectory.appendingPathComponent("\(eventAddress)/")
+        webViewController.setExpo(eventUrl, eventDirectory.absoluteString){
+            if(!online){
+                initFloorplan(webView)
+            }
+        }
         
+        let indexPath = eventDirectory.appendingPathComponent("index.html")
+        let fplanConfigPath = eventDirectory.appendingPathComponent(Constants.fplanConfigPath)
+        let fplanConfigUrl = URL(string:"\(eventUrl)/\(Constants.fplanConfigPath)")
+        
+        let baseUrl = "\(Constants.scheme)://\(eventDirectory.path)"
         let indexUrlString = selectedBooth != nil && selectedBooth != "" ? baseUrl + "/index.html" + "?\(selectedBooth!)" : baseUrl + "/index.html"
         let indexUrl = URL(string: indexUrlString)
         
-        do {
-            if(netReachability.checkConnection()){
+        if(online){
+            loadConfiguration(fplanConfigUrl: fplanConfigUrl!, fplanConfigPath: fplanConfigPath, eventUrl: eventUrl){ config in
                 if fileManager.fileExists(atPath: fplanDirectory.path){
                     try? fileManager.removeItem(at: fplanDirectory)
                 }
                 
-                try Helper.createHtmlFile(filePath: indexPath, noOverlay: noOverlay, directory: directory, baseUrl: baseUrl, eventId: self.eventId, autoInit: false)
-                
-                let requestUrl = URLRequest(url: indexUrl!, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData)
-                webView.load(requestUrl)
-                
-                try Helper.updateAllFiles(baseUrl: URL(string: eventUrl), directory: directory){
+                loadHtmlFile(configuration: config){ html in
+                    try? Helper.createHtmlFile(filePath: indexPath, html: html, noOverlay: self.noOverlay, baseUrl: baseUrl, eventId: self.eventId, autoInit: false)
+                    
+                    let requestUrl = URLRequest(url: indexUrl!, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData)
                     DispatchQueue.main.async {
-                        webView.evaluateJavaScript("window.init()")
+                        webView.load(requestUrl)
+                    }
+                    
+                    Helper.downloadFiles(config.files, eventDirectory){
+                        initFloorplan(webView)
                     }
                 }
             }
-            else{
-                
-                try Helper.createHtmlFile(filePath: indexPath, noOverlay: noOverlay, directory: directory, baseUrl: baseUrl, eventId: self.eventId, autoInit: true)
-                
-                let requestUrl = URLRequest(url: indexUrl!, cachePolicy: .returnCacheDataElseLoad)
+        }
+        else {
+            if !fileManager.fileExists(atPath: indexPath.path) {
+                print("[Fplan] Html file loaded from assets")
+                let html = Helper.getDefaultHtmlFile()
+                try? Helper.createHtmlFile(filePath: indexPath, html: html, noOverlay: self.noOverlay, baseUrl: baseUrl, eventId: self.eventId, autoInit: false)
+            }
+            
+            let requestUrl = URLRequest(url: indexUrl!, cachePolicy: .returnCacheDataDontLoad)
+            DispatchQueue.main.async {
                 webView.load(requestUrl)
             }
-        } catch {
-            print(error)
+        }
+    }
+    
+    private func initFloorplan(_ webView: FSWebView) {
+        DispatchQueue.main.async {
+            webView.evaluateJavaScript("window.init()")
         }
     }
     
@@ -301,6 +329,54 @@ public struct FplanView: UIViewRepresentable {
     
     private func buildDirection(_ webView: FSWebView, _ direction: Direction){
         self.buildDirectionAction?(direction)
+    }
+    
+    private func loadHtmlFile(configuration: Configuration, callback: @escaping ((_ html: String) -> Void)){
+        if(configuration.iosHtmlUrl != nil && configuration.iosHtmlUrl != ""){
+            let session = URLSession.shared
+            let task = session.dataTask(with: URL(string: configuration.iosHtmlUrl!)!, completionHandler: { data, response, error in
+                if let html = data {
+                    print("[Fplan] Html file loaded from \(configuration.iosHtmlUrl!)")
+                    callback(String(decoding: html, as: UTF8.self))
+                }
+                else {
+                    print("[Fplan] Html file loaded from assets")
+                    callback(Helper.getDefaultHtmlFile())
+                }
+            })
+            task.resume()
+        }
+        else {
+            print("[Fplan] Html file loaded from assets")
+            callback(Helper.getDefaultHtmlFile())
+        }
+    }
+    
+    private func loadConfiguration(fplanConfigUrl: URL, fplanConfigPath: URL, eventUrl: String, callback: @escaping ((_ configuration: Configuration) -> Void)) {
+        if(self.configuration != nil){
+            callback(self.configuration!)
+        }
+        
+        let session = URLSession.shared
+        let task = session.dataTask(with: fplanConfigUrl, completionHandler: { data, response, error in
+            if let json = data {
+                let decoder = JSONDecoder()
+                guard let config = try? decoder.decode(Configuration.self, from: json) else {
+                    print("[Fplan] Config file loaded from assets")
+                    let config = Helper.getDefaultConfiguration(baseUrl: eventUrl)
+                    callback(config)
+                    return
+                }
+                print("[Fplan] Config file loaded from \(fplanConfigUrl.absoluteString)")
+                callback(config)
+            }
+            else {
+                print("[Fplan] Config file loaded from assets")
+                let config = Helper.getDefaultConfiguration(baseUrl: eventUrl)
+                callback(config)
+            }
+        })
+        task.resume()
     }
 }
 

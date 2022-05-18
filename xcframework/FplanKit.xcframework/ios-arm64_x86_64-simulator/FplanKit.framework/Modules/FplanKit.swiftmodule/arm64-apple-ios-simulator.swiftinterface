@@ -13,8 +13,8 @@ import WebKit
 import _Concurrency
 @available(iOS 13.0, *)
 public struct FplanView : SwiftUI.UIViewRepresentable {
-  public init(_ url: Swift.String, eventId: Swift.String? = nil, noOverlay: Swift.Bool = true, selectBoothAction: ((_ boothName: Swift.String) -> Swift.Void)? = nil, fpReadyAction: (() -> Swift.Void)? = nil, buildDirectionAction: ((_ direction: FplanKit.Direction) -> Swift.Void)? = nil)
-  public init(_ url: Swift.String, eventId: Swift.String? = nil, noOverlay: Swift.Bool = true, selectedBooth: SwiftUI.Binding<Swift.String?>? = nil, route: FplanKit.Route? = nil, currentPosition: FplanKit.BlueDotPoint? = nil, focusOnCurrentPosition: Swift.Bool = false, fpReadyAction: (() -> Swift.Void)? = nil, buildDirectionAction: ((_ direction: FplanKit.Direction) -> Swift.Void)? = nil)
+  public init(_ url: Swift.String, eventId: Swift.String? = nil, noOverlay: Swift.Bool = true, configuration: FplanKit.Configuration? = nil, selectBoothAction: ((_ boothName: Swift.String) -> Swift.Void)? = nil, fpReadyAction: (() -> Swift.Void)? = nil, buildDirectionAction: ((_ direction: FplanKit.Direction) -> Swift.Void)? = nil)
+  public init(_ url: Swift.String, eventId: Swift.String? = nil, noOverlay: Swift.Bool = true, configuration: FplanKit.Configuration? = nil, selectedBooth: SwiftUI.Binding<Swift.String?>? = nil, route: FplanKit.Route? = nil, currentPosition: FplanKit.BlueDotPoint? = nil, focusOnCurrentPosition: Swift.Bool = false, fpReadyAction: (() -> Swift.Void)? = nil, buildDirectionAction: ((_ direction: FplanKit.Direction) -> Swift.Void)? = nil)
   @_Concurrency.MainActor(unsafe) public func makeUIView(context: FplanKit.FplanView.Context) -> FplanKit.FSWebView
   @_Concurrency.MainActor(unsafe) public func updateUIView(_ webView: FplanKit.FSWebView, context: FplanKit.FplanView.Context)
   public func selectBooth(_ boothName: Swift.String?)
@@ -32,6 +32,14 @@ public struct FplanView : SwiftUI.UIViewRepresentable {
     get
   }
   public typealias Previews = @_opaqueReturnTypeOf("$s8FplanKit0A13View_PreviewsV8previewsQrvpZ", 0) __
+}
+public struct FileInfo : Swift.Codable {
+  public let name: Swift.String
+  public let serverUrl: Swift.String
+  public let cachePath: Swift.String
+  public let version: Swift.String
+  public func encode(to encoder: Swift.Encoder) throws
+  public init(from decoder: Swift.Decoder) throws
 }
 extension Foundation.NSURL {
   public func mimeType() -> Swift.String
@@ -66,6 +74,14 @@ public struct Route : Swift.Equatable {
   public let exceptInaccessible: Swift.Bool
   public init(from: Swift.String, to: Swift.String, exceptInaccessible: Swift.Bool)
   public static func == (r1: FplanKit.Route, r2: FplanKit.Route) -> Swift.Bool
+}
+public struct Configuration : Swift.Codable {
+  public let noOverlay: Swift.Bool
+  public let androidHtmlUrl: Swift.String?
+  public let iosHtmlUrl: Swift.String?
+  public let files: [FplanKit.FileInfo]
+  public func encode(to encoder: Swift.Encoder) throws
+  public init(from decoder: Swift.Decoder) throws
 }
 public struct Line {
   public let startPoint: FplanKit.Point

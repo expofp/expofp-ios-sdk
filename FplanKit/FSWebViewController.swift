@@ -9,12 +9,15 @@ class FSWebViewController: UIViewController, WKURLSchemeHandler, WKNavigationDel
     var route: Route?
     var currentPosition: BlueDotPoint?
     
-    private var expoCacheDirectory: String = ""
-    private var expoUrl: String = ""
+    var expoCacheDirectory: String = ""
+    var expoUrl: String = ""
     
-    func setExpo(_ expoUrl: String, _ expoCacheDirectory: String){
+    var loadedAction: (() -> Void)? = nil
+    
+    func setExpo(_ expoUrl: String, _ expoCacheDirectory: String, _ loadedAction: (() -> Void)? = nil){
         self.expoUrl = expoUrl
         self.expoCacheDirectory = expoCacheDirectory
+        self.loadedAction = loadedAction
     }
     
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
@@ -53,7 +56,7 @@ class FSWebViewController: UIViewController, WKURLSchemeHandler, WKNavigationDel
             let pth = realPath.lowercased().replacingOccurrences(of: expoCacheDirectory.lowercased(), with: "")
             let reqUrl = expoUrl + pth
             
-            Helper.updateFile(URL.init(string: reqUrl)!, realUrl!){
+            Helper.downloadFile(URL.init(string: reqUrl)!, realUrl!){
                 self.setData(urlSchemeTask: urlSchemeTask, dataURL: realUrl!)
             }
         }
@@ -64,7 +67,15 @@ class FSWebViewController: UIViewController, WKURLSchemeHandler, WKNavigationDel
     
     func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {
     }
-
+    
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        if keyPath == #keyPath(WKWebView.estimatedProgress) {
+            if(loadedAction != nil && wkWebView != nil && wkWebView!.estimatedProgress == 1.0 ){
+                loadedAction!();
+            }
+        }
+    }
+    
     private func setData(urlSchemeTask: WKURLSchemeTask, dataURL: URL){
         let data = try? Data(contentsOf: dataURL)
         if(data == nil) {

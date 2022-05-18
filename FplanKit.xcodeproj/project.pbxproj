@@ -57,6 +57,10 @@
 		E78E993F27B07638003DF393 /* index.html in Resources */ = {isa = PBXBuildFile; fileRef = E78E993D27B07638003DF393 /* index.html */; };
 		E7BC4F5B27F7168300DFF2E9 /* FSWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7BC4F5A27F7168300DFF2E9 /* FSWebView.swift */; };
 		E7BC4F5C27F7168300DFF2E9 /* FSWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7BC4F5A27F7168300DFF2E9 /* FSWebView.swift */; };
+		E7EEB09328342BA40080B536 /* Configuration.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7EEB09228342BA40080B536 /* Configuration.swift */; };
+		E7EEB09428342BA40080B536 /* Configuration.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7EEB09228342BA40080B536 /* Configuration.swift */; };
+		E7EEB09628342BB30080B536 /* FileInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7EEB09528342BB30080B536 /* FileInfo.swift */; };
+		E7EEB09728342BB30080B536 /* FileInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7EEB09528342BB30080B536 /* FileInfo.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -99,6 +103,8 @@
 		E78E993B27B0744A003DF393 /* NetworkReachability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkReachability.swift; sourceTree = "<group>"; };
 		E78E993D27B07638003DF393 /* index.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = index.html; sourceTree = "<group>"; };
 		E7BC4F5A27F7168300DFF2E9 /* FSWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FSWebView.swift; sourceTree = "<group>"; };
+		E7EEB09228342BA40080B536 /* Configuration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Configuration.swift; sourceTree = "<group>"; };
+		E7EEB09528342BB30080B536 /* FileInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileInfo.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -129,6 +135,8 @@
 				E74819F527BB99930070D9B5 /* Route.swift */,
 				E74819F827BBA1E10070D9B5 /* Line.swift */,
 				E76B1A6F282412EE008CBB93 /* BlueDotPoint.swift */,
+				E7EEB09228342BA40080B536 /* Configuration.swift */,
+				E7EEB09528342BB30080B536 /* FileInfo.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -351,6 +359,7 @@
 				E78E993A27B07444003DF393 /* FplanView.swift in Sources */,
 				E78776A927859137007C1824 /* FplanKit.docc in Sources */,
 				E706182D27B44AF200F35C14 /* FpHandler.swift in Sources */,
+				E7EEB09628342BB30080B536 /* FileInfo.swift in Sources */,
 				E770DB12282148E50098B6CE /* MimeType.swift in Sources */,
 				E78E993C27B0744A003DF393 /* NetworkReachability.swift in Sources */,
 				E7BC4F5B27F7168300DFF2E9 /* FSWebView.swift in Sources */,
@@ -360,6 +369,7 @@
 				E710330027F332FC001346A4 /* Constants.swift in Sources */,
 				E72A4C4727B08054004AB602 /* Helper.swift in Sources */,
 				E73980F927FE2ACA0009B781 /* FSWebViewController.swift in Sources */,
+				E7EEB09328342BA40080B536 /* Configuration.swift in Sources */,
 				E706183027B44B6D00F35C14 /* DirectionHandler.swift in Sources */,
 				E74819F927BBA1E10070D9B5 /* Line.swift in Sources */,
 				E76B1A70282412EE008CBB93 /* BlueDotPoint.swift in Sources */,
@@ -377,7 +387,9 @@
 				E770DB13282148E50098B6CE /* MimeType.swift in Sources */,
 				E706182B27B44A9700F35C14 /* BoothHandler.swift in Sources */,
 				E720CD6327BB16220077AE87 /* Point.swift in Sources */,
+				E7EEB09728342BB30080B536 /* FileInfo.swift in Sources */,
 				E74819F727BB99930070D9B5 /* Route.swift in Sources */,
+				E7EEB09428342BA40080B536 /* Configuration.swift in Sources */,
 				E720CD6627BB18CB0077AE87 /* Booth.swift in Sources */,
 				E7BC4F5C27F7168300DFF2E9 /* FSWebView.swift in Sources */,
 				E76B1A71282412EE008CBB93 /* BlueDotPoint.swift in Sources */,
