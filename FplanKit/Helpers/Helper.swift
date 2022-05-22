@@ -29,13 +29,12 @@ struct Helper{
         }
     }
     
-    public static func createHtmlFile(filePath: URL, html: String, noOverlay: Bool, baseUrl: String, eventId: String, autoInit: Bool) throws {
+    public static func createHtmlFile(filePath: URL, html: String, noOverlay: Bool, baseUrl: String, eventId: String) throws {
         let content = html
             .replacingOccurrences(of: "$url#", with: baseUrl)
             .replacingOccurrences(of: "$eventId#", with: eventId)
             .replacingOccurrences(of: "$noOverlay#", with: String(noOverlay))
-            .replacingOccurrences(of: "$autoInit#", with: String(autoInit))
-        
+       
         let fileDirectory = filePath.deletingLastPathComponent()
         if !FileManager.default.fileExists(atPath: fileDirectory.path){
             try! FileManager.default.createDirectory(atPath: fileDirectory.path, withIntermediateDirectories: true, attributes: nil)
@@ -277,14 +276,7 @@ struct Helper{
         document.body.appendChild(expofpScript);
       }
 
-
-      function autoInit() {
-        if($autoInit#){
-            init();
-        }
-      }
-      autoInit();
-    </script>
+</script>
 </body>
 </html>
 """;

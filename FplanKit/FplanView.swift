@@ -263,11 +263,6 @@ public struct FplanView: UIViewRepresentable {
         
         let fplanDirectory = Helper.getCacheDirectory().appendingPathComponent("fplan/")
         let eventDirectory = fplanDirectory.appendingPathComponent("\(eventAddress)/")
-        webViewController.setExpo(eventUrl, eventDirectory.absoluteString){
-            if(!online){
-                initFloorplan(webView)
-            }
-        }
         
         let indexPath = eventDirectory.appendingPathComponent("index.html")
         let fplanConfigPath = eventDirectory.appendingPathComponent(Constants.fplanConfigPath)
@@ -278,16 +273,18 @@ public struct FplanView: UIViewRepresentable {
         let indexUrl = URL(string: indexUrlString)
         
         if(online){
+            webViewController.setExpo(eventUrl, eventDirectory.absoluteString)
+            
             loadConfiguration(fplanConfigUrl: fplanConfigUrl!, fplanConfigPath: fplanConfigPath, eventUrl: eventUrl){ config in
                 if fileManager.fileExists(atPath: fplanDirectory.path){
                     try? fileManager.removeItem(at: fplanDirectory)
                 }
                 
                 loadHtmlFile(configuration: config){ html in
-                    try? Helper.createHtmlFile(filePath: indexPath, html: html, noOverlay: self.noOverlay, baseUrl: baseUrl, eventId: self.eventId, autoInit: false)
+                    try? Helper.createHtmlFile(filePath: indexPath, html: html, noOverlay: self.noOverlay, baseUrl: baseUrl, eventId: self.eventId)
                     
-                    let requestUrl = URLRequest(url: indexUrl!, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData)
                     DispatchQueue.main.async {
+                        let requestUrl = URLRequest(url: indexUrl!, cachePolicy: .reloadRevalidatingCacheData)
                         webView.load(requestUrl)
                     }
                     
@@ -298,14 +295,18 @@ public struct FplanView: UIViewRepresentable {
             }
         }
         else {
+            webViewController.setExpo(eventUrl, eventDirectory.absoluteString){
+                initFloorplan(webView)
+            }
+            
             if !fileManager.fileExists(atPath: indexPath.path) {
                 print("[Fplan] Html file loaded from assets")
                 let html = Helper.getDefaultHtmlFile()
-                try? Helper.createHtmlFile(filePath: indexPath, html: html, noOverlay: self.noOverlay, baseUrl: baseUrl, eventId: self.eventId, autoInit: false)
+                try? Helper.createHtmlFile(filePath: indexPath, html: html, noOverlay: self.noOverlay, baseUrl: baseUrl, eventId: self.eventId)
             }
             
-            let requestUrl = URLRequest(url: indexUrl!, cachePolicy: .returnCacheDataDontLoad)
             DispatchQueue.main.async {
+                let requestUrl = URLRequest(url: indexUrl!, cachePolicy: .returnCacheDataDontLoad)
                 webView.load(requestUrl)
             }
         }
